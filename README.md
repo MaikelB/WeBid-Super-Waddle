@@ -5,4 +5,3 @@ Modifications found in this repository are made by @MaikelB
 #Original project
 Original project can be found here: https://github.com/renlok/WeBid.git.
 Shoutouts to @renlok for making this system.
-
