@@ -18,7 +18,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 <![endif]-->
 <meta charset="utf-8">
-<title>jQuery File Upload Demo</title>
+<title>{SITENAME}</title>
 <meta name="description" content="File Upload widget with multiple file selection, drag&amp;drop support, progress bars, validation and preview images, audio and video for jQuery. Supports cross-domain, chunked and resumable file uploads and client-side image resizing. Works with any server-side platform (PHP, Python, Ruby on Rails, Java, Node.js, Go etc.) that supports standard HTML form file uploads.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Bootstrap styles -->
@@ -36,7 +36,10 @@
 </head>
 <body>
 <div class="container">
-    <h1>jQuery File Upload Demo</h1>
+  
+      <h1>{SITENAME}</h1>
+      <div class="alert alert-success" role="alert">{MAXPICS}</div>
+
     <!-- The file upload form used as target for the file upload widget -->
     <form id="fileupload" action="{SITEUTRL}" method="POST" enctype="multipart/form-data">
         <!-- Redirect browsers with JavaScript disabled to the origin page -->
@@ -58,7 +61,6 @@
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel upload</span>
                 </button>
-                <input type="checkbox" class="toggle">
                 <!-- The global file processing state -->
                 <span class="fileupload-process"></span>
             </div>
@@ -116,7 +118,7 @@
         <td>
             <span class="preview">
                 {% if (file.thumbnailUrl) { %}
-                    <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" data-gallery><img src="{%=file.thumbnailUrl%}"></a>
+                    <a href="{%=file.url%}" title="{%=file.name%}" download="{%=file.name%}" data-gallery><img width="400" src="{%=file.thumbnailUrl%}"></a>
                 {% } %}
             </span>
         </td>
@@ -164,7 +166,7 @@
 <script src="{SITEURL}/themes/{THEME}/js/vendor/jquery.ui.widget.js"></script>
 <!-- The Templates plugin is included to render the upload/download listings -->
 <script src="{SITEURL}/themes/{THEME}/js/tmpl.min.js"></script>
-<!-- The Load Image plugin is included for the preview images and image resizing functionality -->
+<!-- The Load Image plugin is included for the preview images$('#fileupload').fileupload and image resizing functionality -->
 <script src="{SITEURL}/themes/{THEME}/js/load-image.all.min.js"></script>
 <!-- The Canvas to Blob plugin is included for image resizing functionality -->
 <script src="{SITEURL}/themes/{THEME}/js/canvas-to-blob.min.js"></script>
