@@ -843,22 +843,16 @@ class UploadHandler
 				unset ($_SESSION['UPLOADED_PICTURES'][$keysearch]);
 				if ($file_name == $_SESSION['SELL_pict_url']) {
 					unset($_SESSION['SELL_pict_url']);
-					if (!empty($_SESSION[$this->options['session_key']])) {
-					reset($_SESSION[$this->options['session_key']]);
-					$_SESSION['SELL_pict_url'] = $_SESSION[$this->options['session_key']][key($_SESSION[$this->options['session_key']])];
-					$response = array(
-						$this->options['param_name'] => $this->get_file_object($_SESSION['SELL_pict_url'])
-						);
-					}
-					else {
+
 					$_SESSION['UPLOADED_PICTURES'] = array_values($_SESSION['UPLOADED_PICTURES']);
-					$_SESSION['SELL_pict_url'] = $_SESSION['UPLOADED_PICTURES'][0];
-					$response = array(
-						'succes' => 'succes',
-						'currentFavorite' => $_SESSION['SELL_pict_url']
-						);
+					if(!empty($_SESSION['UPLOADED_PICTURES'])) {
+						$_SESSION['SELL_pict_url'] = $_SESSION['UPLOADED_PICTURES'][0];
 					}
 				}
+				$response = array(
+					'succes' => 'succes',
+					'currentFavorite' => isset($_SESSION['SELL_pict_url']) ? $_SESSION['SELL_pict_url'] : null
+				);
 				foreach($this->options['image_versions'] as $version => $options) {
 					if (!empty($version)) {
 						$file = $this->get_upload_path($file_name, $version);
