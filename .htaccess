@@ -16,6 +16,7 @@ Options All -Indexes
 # only images can be accessed in the uploaded folder
 RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/uploaded [NC]
+RewriteCond %{REQUEST_URI} ^/index.php
 RewriteCond %{REQUEST_URI} !\.(jpe?g|png|gif)$ [NC]
 RewriteRule .* - [F,L]
 
