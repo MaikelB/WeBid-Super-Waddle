@@ -361,6 +361,26 @@
                 }
                 $(this).removeClass('fileupload-processing');
             },
+            favorite: function(e, data) {
+              var button = $(e.currentTarget);
+              if (data.url) {
+                //We don't want anyone to click before a response
+                $('table').find('.favorite').prop('disabled', true);
+                $('table').find('.default').html('Set as default');
+                button.closest('.template-download').find('.default').html('Loading...');
+                $.ajax(data).done(function() {
+                $('table').find('.favorite').prop('disabled', false);
+                button.closest('.template-download').find('.favorite').prop('disabled', true);
+                button.closest('.template-download').find('.icon').prop('class', 'icon-white icon-ok icon');
+                button.closest('.template-download').find('.default').html('Default');
+
+                }).fail(function() {
+                //Alert if something fails
+                  $('table').find('.favorite').prop('disabled', false);
+                  alert('Something went wrong');
+                });
+              }
+            },
             // Callback for file deletion:
             destroy: function (e, data) {
                 if (e.isDefaultPrevented()) {
@@ -378,7 +398,14 @@
                     };
                 if (data.url) {
                     data.dataType = data.dataType || that.options.dataType;
-                    $.ajax(data).done(removeNode).fail(function () {
+                    $.ajax(data).done(removeNode, function(data) {
+                      if(data.currentFavorite) {
+                        var findtable = '.' + data.currentFavorite.replace(/[^\w\s]/gi, '').split(' ').join("");
+                        $('table')
+                        .find(findtable)
+                        .prop('disabled', true);
+                      }
+                    }).fail(function () {
                         that._trigger('destroyfailed', e, data);
                     });
                 } else {
@@ -544,6 +571,16 @@
             }, button.data()));
         },
 
+        _favoriteHandler: function (e) {
+            e.preventDefault();
+            var button = $(e.currentTarget);
+            this._trigger('favorite', e, $.extend({
+                context: button.closest('.template-download'),
+                type: 'FAVORITE',
+                dataType: this.options.dataType
+            }, button.data()));
+		    },
+
         _forceReflow: function (node) {
             return $.support.transition && node.length &&
                 node[0].offsetWidth;
@@ -603,12 +640,22 @@
                     );
                 }
             });
+            this._on(fileUploadButtonBar.find('.favorite'), {
+              click: function(e) {
+                e.preventDefault();
+                filesList.find('.toggle:checked')
+                  .closes('.template-download')
+                  .find('.favorite').click();
+                fileUploadButtonBar.find('.toggle')
+                  .prop('checked', false);
+              }
+            });
         },
 
         _destroyButtonBarEventHandlers: function () {
             this._off(
                 this.element.find('.fileupload-buttonbar')
-                    .find('.start, .cancel, .delete'),
+                    .find('.start, .cancel, .delete, .favorite'),
                 'click'
             );
             this._off(
@@ -622,7 +669,8 @@
             this._on(this.options.filesContainer, {
                 'click .start': this._startHandler,
                 'click .cancel': this._cancelHandler,
-                'click .delete': this._deleteHandler
+                'click .delete': this._deleteHandler,
+                'click .favorite': this._favoriteHandler
             });
             this._initButtonBarEventHandlers();
         },

@@ -58,10 +58,6 @@
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel upload</span>
                 </button>
-                <button type="button" class="btn btn-danger delete">
-                    <i class="glyphicon glyphicon-trash"></i>
-                    <span>Delete</span>
-                </button>
                 <input type="checkbox" class="toggle">
                 <!-- The global file processing state -->
                 <span class="fileupload-process"></span>
@@ -145,11 +141,18 @@
                     <i class="glyphicon glyphicon-trash"></i>
                     <span>Delete</span>
                 </button>
-                <input type="checkbox" name="delete" value="1" class="toggle">
             {% } else { %}
                 <button class="btn btn-warning cancel">
                     <i class="glyphicon glyphicon-ban-circle"></i>
                     <span>Cancel</span>
+                </button>
+            {% } %}
+        </td>
+        <td>
+            {% if (file.favoriteUrl) { %}
+                <button class="btn btn-info favorite {%=file.name.replace(/[^\w\s]/gi, '').split(' ').join("") %}" data-type="{%=file.favoriteType%}" data-url="{%=file.favoriteUrl%}" {% if(file.name == file.currentFavorite) { %} disabled {% } %}>
+                    <i class="glyphicon glyphicon-heart-empty"></i>
+                    <span>Set default</span>
                 </button>
             {% } %}
         </td>

@@ -44,7 +44,8 @@ class UploadHandler
 				'param_name' => 'files',
 				// Set the following option to 'POST', if your server does not support
 				// DELETE requests. This is a parameter sent to the client:
-				'delete_type' => 'delete',
+				'deleteType' => 'delete',
+				'favoriteType' => 'favorite',
 				'access_control_allow_origin' => '*',
 				'access_control_allow_credentials' => false,
 				'access_control_allow_methods' => array(
@@ -54,7 +55,8 @@ class UploadHandler
 					'POST',
 					'PUT',
 					'PATCH',
-					'DELETE'
+					'DELETE',
+					'FAVORITE'
 				),
 				'access_control_allow_headers' => array(
 					'Content-Type',
@@ -135,6 +137,9 @@ class UploadHandler
 				case 'DELETE':
 					$this->delete();
 					break;
+				case 'FAVORITE':
+					$this->favorite();
+					break;
 				default:
 					$this->header('HTTP/1.1 405 Method Not Allowed');
 			}
@@ -193,13 +198,27 @@ class UploadHandler
 			$file->deleteUrl = $this->options['script_url']
 				.$this->get_query_separator($this->options['script_url'])
 				.'file='.rawurlencode($file->name);
-			$file->delete_type = $this->options['delete_type'];
-			if ($file->delete_type !== 'DELETE') {
+			$file->deleteType = $this->options['deleteType'];
+			if ($file->deleteType !== 'DELETE') {
 				$file->deleteUrl .= '&_method=DELETE';
 			}
 			if ($this->options['access_control_allow_credentials']) {
 				$file->delete_with_credentials = true;
 			}
+		}
+
+		protected function set_file_favorite_properties($file) {
+			$file->favoriteUrl = $this->options['script_url']
+				.$this->get_query_separator($this->options['script_url'])
+				.'file='.rawurlencode($file->name);
+			$file->favoriteType = $this->options['favoriteType'];
+			if ($file->favoriteType !== 'FAVORITE') {
+				$file->favoriteUrl .= '&_method=FAVORITE';
+			}
+			if (empty($_SESSION['SELL_pict_url'])) {
+				$_SESSION['SELL_pict_url'] = $file->name;
+			}
+			$file->currentFavorite = $_SESSION['SELL_pict_url'];
 		}
 
 		// Fix for overflowing signed 32 bit integers,
@@ -235,6 +254,7 @@ class UploadHandler
 					$this->get_upload_path($file_name)
 				);
 				$file->url = $this->get_download_url($file->name);
+				$file->thumbnailUrl = $this->get_download_url($file->name);
 				foreach($this->options['image_versions'] as $version => $options) {
 					if (!empty($version)) {
 						if (is_file($this->get_upload_path($file_name, $version))) {
@@ -246,6 +266,7 @@ class UploadHandler
 					}
 				}
 				$this->set_file_delete_properties($file);
+				$this->set_file_favorite_properties($file);
 				return $file;
 			}
 			return null;
@@ -591,11 +612,9 @@ class UploadHandler
 							FILE_APPEND
 						);
 						array_push($_SESSION['UPLOADED_PICTURES'], $file->name);
-						$_SESSION['SELL_pict_url'] = $file->name;
 					} else {
 						move_uploaded_file($uploaded_file, $file_path);
 						array_push($_SESSION['UPLOADED_PICTURES'], $file->name);
-						$_SESSION['SELL_pict_url'] = $file->name;
 					}
 				} else {
 					// Non-multipart uploads (PUT method support)
@@ -605,7 +624,6 @@ class UploadHandler
 						$append_file ? FILE_APPEND : 0
 					);
 					array_push($_SESSION['UPLOADED_PICTURES'], $file->name);
-					$_SESSION['SELL_pict_url'] = $file->name;
 				}
 				$file_size = $this->get_file_size($file_path, $append_file);
 				if ($file_size === $file->size) {
@@ -622,6 +640,8 @@ class UploadHandler
 					}
 				}
 				$this->set_file_delete_properties($file);
+				$this->set_file_favorite_properties($file);
+				$file->thumbnailUrl = $this->get_download_url($file->name);
 			}
 			return $file;
 		}
@@ -817,10 +837,27 @@ class UploadHandler
 			$file_name = $this->get_file_name_param();
 			$file_path = $this->get_upload_path($file_name);
 			$success = is_file($file_path) && $file_name[0] !== '.' && unlink($file_path);
+			$_SESSION['UPLOADED_PICTURES'] = array_values($_SESSION['UPLOADED_PICTURES']);
 			if ($success) {
 				$keysearch = array_search($file_name, $_SESSION['UPLOADED_PICTURES']);
-				if ($keysearch) {
-					unset ($_SESSION['UPLOADED_PICTURES'][$keysearch]);
+				unset ($_SESSION['UPLOADED_PICTURES'][$keysearch]);
+				if ($file_name == $_SESSION['SELL_pict_url']) {
+					unset($_SESSION['SELL_pict_url']);
+					if (!empty($_SESSION[$this->options['session_key']])) {
+					reset($_SESSION[$this->options['session_key']]);
+					$_SESSION['SELL_pict_url'] = $_SESSION[$this->options['session_key']][key($_SESSION[$this->options['session_key']])];
+					$response = array(
+						$this->options['param_name'] => $this->get_file_object($_SESSION['SELL_pict_url'])
+						);
+					}
+					else {
+					$_SESSION['UPLOADED_PICTURES'] = array_values($_SESSION['UPLOADED_PICTURES']);
+					$_SESSION['SELL_pict_url'] = $_SESSION['UPLOADED_PICTURES'][0];
+					$response = array(
+						'succes' => 'succes',
+						'currentFavorite' => $_SESSION['SELL_pict_url']
+						);
+					}
 				}
 				foreach($this->options['image_versions'] as $version => $options) {
 					if (!empty($version)) {
@@ -831,7 +868,21 @@ class UploadHandler
 					}
 				}
 			}
-			return $this->generate_response(array('success' => $success), $print_response);
+			return $this->generate_response($response, $print_response);
 		}
 
+		public function favorite($print_response = true) {
+			$file_name = $this->get_file_name_param();
+			$file_path = $this->get_upload_path($file_name);
+			$success = is_file($file_path);
+			if ($success){
+				$_SESSION['SELL_pict_url'] = $file_name;
+			}
+			if ($file_name) {
+				$response = array(
+					substr($this->options['param_name'], 0, -1) => $this->get_file_object($file_name)
+				);
+			}
+			return $this->generate_response($response, $print_response);
+		}
 	}
